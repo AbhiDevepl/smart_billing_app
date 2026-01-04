@@ -245,6 +245,9 @@ class BillingScreen(QWidget):
         l.addLayout(btn_row)
         return w
 
+    def load_data(self):
+        self.load_product_list()
+
     def load_product_list(self):
         conn = db.get_connection()
         cursor = conn.cursor()

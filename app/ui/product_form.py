@@ -219,5 +219,4 @@ class ProductForm(QWidget):
         self.entry_category.setCurrentIndex(0)
 
     def load_data(self):
-        # Optional: refresh logic if needed
-        pass
+        self.clear_form()

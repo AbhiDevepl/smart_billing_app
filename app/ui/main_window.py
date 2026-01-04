@@ -126,6 +126,12 @@ class MainWindow(QMainWindow):
         if self.stack.currentWidget():
             self.stack.currentWidget().update()
 
+    def refresh_current_screen(self):
+        screen = self.stack.currentWidget()
+        if screen and hasattr(screen, 'load_data'):
+            screen.load_data()
+            self.status_bar.showMessage("Data Refreshed", 3000)
+
     def show_dashboard(self):
         self.set_active_nav("Dashboard")
         from app.ui.dashboard import Dashboard
