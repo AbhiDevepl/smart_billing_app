@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                               QPushButton, QStackedWidget, QStatusBar, QFrame, QLabel)
-from PySide6.QtCore import Qt, QSize
+                               QPushButton, QStackedWidget, QStatusBar, QFrame, QLabel, QFileDialog, QMessageBox)
+from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QPixmap
 from app.config import Config
 import os
@@ -9,11 +9,33 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(Config.APP_TITLE)
-        self.showFullScreen()
         self.current_theme = Config.THEME
         self.screens = {}
         self.nav_buttons = {}
+        self.nav_history = []
         self.setup_ui()
+        QTimer.singleShot(100, self.check_first_run)
+
+    def check_first_run(self):
+        settings = Config.load_settings()
+        if 'invoice_path' not in settings:
+            QMessageBox.information(
+                self, 
+                "First Time Setup", 
+                "Welcome to Smart Battery Billing! \n\nPlease select the folder where you want to keep your Invoices."
+            )
+            
+            folder = QFileDialog.getExistingDirectory(self, "Select Invoice Storage Folder", os.getcwd())
+            
+            if folder:
+                settings['invoice_path'] = folder
+                Config.save_settings(settings)
+                Config.INVOICE_DIR = folder
+                QMessageBox.information(self, "Setup Complete", f"Invoices will be saved to:\n{folder}")
+            else:
+                pass
+        
+        self.showFullScreen()
         self.apply_theme()
 
     def setup_ui(self):
@@ -49,10 +71,11 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(logo_container)
 
         self.create_nav_button("Dashboard", "🏠", self.show_dashboard)
-        self.create_nav_button("New Bill", "🛒", self.show_billing)
+        self.create_nav_button("New Bill", "🧾", self.show_billing)
         self.create_nav_button("Inventory", "📦", self.show_products)
         self.create_nav_button("Stock Ledger", "📊", self.show_stock)
-        
+        self.create_nav_button("Customers", "👥", self.show_customers)
+
         sidebar_layout.addStretch()
         
         self.btn_theme = QPushButton(" Toggle Theme")
@@ -83,6 +106,12 @@ class MainWindow(QMainWindow):
         self.btn_refresh.setFixedWidth(120)
         self.btn_refresh.clicked.connect(self.refresh_current_screen)
         top_bar_layout.addWidget(self.btn_refresh)
+
+        self.btn_invoices = QPushButton(" 📂 Invoices ")
+        self.btn_invoices.setObjectName("Secondary")
+        self.btn_invoices.setFixedWidth(120)
+        self.btn_invoices.clicked.connect(self.open_invoices_folder)
+        top_bar_layout.addWidget(self.btn_invoices)
         
         right_layout.addWidget(self.top_bar)
 
@@ -132,27 +161,66 @@ class MainWindow(QMainWindow):
             screen.load_data()
             self.status_bar.showMessage("Data Refreshed", 3000)
 
-    def show_dashboard(self):
+    def open_invoices_folder(self):
+        import os
+        from app.config import Config
+        if not os.path.exists(Config.INVOICE_DIR):
+            os.makedirs(Config.INVOICE_DIR)
+        os.startfile(Config.INVOICE_DIR)
+        self.status_bar.showMessage("Opening Invoices Folder...", 3000)
+
+    def show_dashboard(self, is_back=False):
         self.set_active_nav("Dashboard")
         from app.ui.dashboard import Dashboard
-        self._switch_screen("dashboard", Dashboard)
+        self._switch_screen("dashboard", Dashboard, is_back)
 
-    def show_billing(self):
+    def show_billing(self, is_back=False):
         self.set_active_nav("New Bill")
         from app.ui.billing_screen import BillingScreen
-        self._switch_screen("billing", BillingScreen)
+        self._switch_screen("billing", BillingScreen, is_back)
 
-    def show_products(self):
+    def show_products(self, is_back=False):
         self.set_active_nav("Inventory")
         from app.ui.product_form import ProductForm
-        self._switch_screen("products", ProductForm)
+        self._switch_screen("products", ProductForm, is_back)
 
-    def show_stock(self):
+    def show_stock(self, is_back=False):
         self.set_active_nav("Stock Ledger")
         from app.ui.stock_screen import StockScreen
-        self._switch_screen("stock", StockScreen)
+        self._switch_screen("stock", StockScreen, is_back)
 
-    def _switch_screen(self, key, widget_class):
+    def show_customers(self, is_back=False):
+        self.set_active_nav("Customers")
+        from app.ui.customer_screen import CustomerScreen
+        self._switch_screen("customers", CustomerScreen, is_back)
+
+    def go_back(self):
+        if len(self.nav_history) > 1:
+            self.nav_history.pop() # remove current screen
+            prev_key = self.nav_history[-1]
+            
+            nav_map = {
+                "dashboard": self.show_dashboard,
+                "billing": self.show_billing,
+                "products": self.show_products,
+                "stock": self.show_stock,
+                "customers": self.show_customers
+            }
+            if prev_key in nav_map:
+                nav_map[prev_key](is_back=True)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.go_back()
+        super().keyPressEvent(event)
+
+    def _switch_screen(self, key, widget_class, is_back=False):
+        if not is_back:
+            if not self.nav_history or self.nav_history[-1] != key:
+                self.nav_history.append(key)
+                if len(self.nav_history) > 20:
+                    self.nav_history.pop(0)
+
         if key not in self.screens:
             self.screens[key] = widget_class(controller=self)
             self.stack.addWidget(self.screens[key])

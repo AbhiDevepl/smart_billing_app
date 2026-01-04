@@ -1,15 +1,18 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                                QPushButton, QTableWidget, QTableWidgetItem, 
                                QHeaderView, QFrame, QGridLayout, QScrollArea)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from app.database import db
 from app.config import Config
 from datetime import datetime
 
 class StatCard(QFrame):
+    clicked = Signal()
+
     def __init__(self, title, value, icon, subtitle="", color="#007BFF"):
         super().__init__()
         self.setObjectName("Card")
+        self.setCursor(Qt.PointingHandCursor)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(25, 25, 25, 25)
         layout.setSpacing(10)
@@ -35,6 +38,11 @@ class StatCard(QFrame):
         self.sub_lbl.setObjectName("Description")
         self.sub_lbl.setStyleSheet("background: transparent;")
         layout.addWidget(self.sub_lbl)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
 
 class Dashboard(QWidget):
     def __init__(self, controller=None):
@@ -77,6 +85,10 @@ class Dashboard(QWidget):
         stats_layout.addWidget(self.card_products, 0, 3)
 
         self.content_layout.addLayout(stats_layout)
+
+        # Interactivity
+        self.card_stock.clicked.connect(lambda: self.controller.show_stock() if self.controller else None)
+        self.card_products.clicked.connect(lambda: self.controller.show_products() if self.controller else None)
 
         # 2. Main Content
         tables_layout = QHBoxLayout()
@@ -130,6 +142,11 @@ class Dashboard(QWidget):
         btn_stock.setObjectName("Secondary")
         btn_stock.clicked.connect(lambda: self.controller.show_stock() if self.controller else None)
         act_v_layout.addWidget(btn_stock)
+        
+        btn_cust = QPushButton("👥 Manage Customers")
+        btn_cust.setObjectName("Secondary")
+        btn_cust.clicked.connect(lambda: self.controller.show_customers() if self.controller else None)
+        act_v_layout.addWidget(btn_cust)
         
         act_v_layout.addStretch()
         

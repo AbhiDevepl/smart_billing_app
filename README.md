@@ -22,3 +22,5 @@ A desktop application for electronics shops managing battery and inverter sales.
 ## License
 MIT License
  .\.venv\Scripts\python.exe main.py
+
+ 

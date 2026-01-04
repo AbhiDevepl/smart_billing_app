@@ -10,9 +10,41 @@ class Config:
     
     APP_TITLE = "Smart Battery Billing"
     WINDOW_SIZE = "1200x800"
-    
+    SETTINGS_PATH = os.path.join(DATA_DIR, 'settings.json')
     # Theme Configuration
     THEME = "dark"  # "light" or "dark"
+
+    @staticmethod
+    def load_settings(path=None):
+        import json
+        p = path or Config.SETTINGS_PATH
+        if os.path.exists(p):
+            try:
+                with open(p, 'r') as f:
+                    return json.load(f)
+            except Exception: pass
+        return {}
+
+    @staticmethod
+    def save_settings(settings):
+        import json
+        try:
+            with open(Config.SETTINGS_PATH, 'w') as f:
+                json.dump(settings, f, indent=4)
+        except Exception: pass
+
+    # Initialize dynamic paths via a direct call before it becomes a staticmethod
+    _settings_loader = lambda p: Config.load_settings(p) # This still needs Config name which might fail
+    # Let's use a more direct way
+    import json as _json
+    _init_settings = {}
+    if os.path.exists(SETTINGS_PATH):
+        try:
+            with open(SETTINGS_PATH, 'r') as _f:
+                _init_settings = _json.load(_f)
+        except: pass
+    
+    INVOICE_DIR = _init_settings.get('invoice_path', os.path.join(BASE_DIR, 'invoices'))
     
     PALETTES = {
         "light": {
@@ -97,6 +129,11 @@ class Config:
                 background-color: {p['card_bg']};
                 border: 1px solid {p['border']};
                 border-radius: 12px;
+            }}
+            
+            #Card:hover {{
+                background-color: {p['border']}22;
+                border: 1px solid {p['accent']}44;
             }}
             
             #SectionHeader {{

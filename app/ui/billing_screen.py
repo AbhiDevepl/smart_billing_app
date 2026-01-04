@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                                QLineEdit, QComboBox, QPushButton, QTableWidget, 
                                QTableWidgetItem, QHeaderView, QMessageBox, 
-                               QRadioButton, QButtonGroup, QGridLayout, QScrollArea, QFrame)
+                               QRadioButton, QButtonGroup, QGridLayout, QScrollArea, QFrame, QCompleter)
 from PySide6.QtCore import Qt, QRegularExpression
 from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
 import os
@@ -119,6 +119,10 @@ class BillingScreen(QWidget):
         # --- Section 2: Product Addition ---
         self.combo_product = QComboBox()
         self.combo_product.setEditable(True)
+        self.combo_completer = QCompleter()
+        self.combo_completer.setFilterMode(Qt.MatchContains)
+        self.combo_completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.combo_product.setCompleter(self.combo_completer)
         self.entry_price = QLineEdit()
         self.entry_price.setValidator(QIntValidator(0, 999999))
         self.entry_qty = QLineEdit("1")
@@ -262,6 +266,10 @@ class BillingScreen(QWidget):
             name = f"{p[1]} {p[2]} (₹{p[3]})"
             self.prod_map[name] = p
             self.combo_product.addItem(name)
+        
+        # Link completer to the updated combo list
+        if hasattr(self, 'combo_completer'):
+            self.combo_completer.setModel(self.combo_product.model())
 
     def on_product_select(self):
         name = self.combo_product.currentText()

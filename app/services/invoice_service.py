@@ -85,13 +85,25 @@ class InvoiceService:
                     VALUES (?, ?, ?, ?, ?)
                 """, (invoice_no, pid, qty, price, total_line_price))
             
-            # 3. Generate PDF (Local storage in customer subfolder)
+            # 3. Generate PDF 
             from app.services.pdf_service import PDFService
             from app.config import Config
+            import re
+
+            def sanitize(text):
+                return re.sub(r'[^\w\-_\. ]', '_', str(text)).replace(' ', '_')
+
+            cust_name_clean = sanitize(customer_data['name'])
+            # Use first product name for the filename
+            prod_name_clean = sanitize(cart_items[0]['product_name']) if cart_items else "NoProduct"
+            time_stamp = time.strftime("%Y%m%d_%H%M%S")
+            date_folder_name = time.strftime("%Y-%m-%d")
             
-            customer_folder = os.path.join(Config.INVOICE_DIR, customer_data['mobile'])
-            os.makedirs(customer_folder, exist_ok=True)
-            pdf_path = os.path.join(customer_folder, f"{invoice_no}.pdf")
+            daily_folder = os.path.join(Config.INVOICE_DIR, date_folder_name)
+            os.makedirs(daily_folder, exist_ok=True)
+            
+            filename = f"{cust_name_clean}_{prod_name_clean}_{time_stamp}.pdf"
+            pdf_path = os.path.join(daily_folder, filename)
             
             inv_data_for_pdf = {
                 'invoice_no': invoice_no,
