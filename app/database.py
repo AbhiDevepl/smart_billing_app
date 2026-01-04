@@ -27,9 +27,16 @@ class DatabaseManager:
                         warranty_months INTEGER,
                         current_price REAL,
                         current_purchase_price REAL DEFAULT 0,
+                        is_active INTEGER DEFAULT 1,
                         last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 ''')
+                
+                # Migration: Add is_active if it doesn't exist
+                try:
+                    cursor.execute("ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1")
+                except sqlite3.OperationalError:
+                    pass # Column already exists
                 
                 # Customers Table
                 cursor.execute('''

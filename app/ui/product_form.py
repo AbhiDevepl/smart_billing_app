@@ -165,8 +165,9 @@ class ProductForm(QWidget):
             existing = cursor.fetchone()
             if existing:
                 cursor.execute("""
-                    UPDATE products SET category=?, brand_name=?, model_name=?, warranty_months=?, current_price=? 
-                    WHERE id=?
+                    UPDATE products 
+                    SET category = ?, brand_name = ?, model_name = ?, warranty_months = ?, current_price = ?, is_active = 1
+                    WHERE id = ?
                 """, (cat, brand, model, warranty, price, existing[0]))
             else:
                 cursor.execute("""
@@ -197,15 +198,9 @@ class ProductForm(QWidget):
             row = cursor.fetchone()
             if row:
                 pid = row[0]
-                # Check link to invoices
-                cursor.execute("SELECT COUNT(*) FROM invoice_items WHERE product_id = ?", (pid,))
-                if cursor.fetchone()[0] > 0:
-                    QMessageBox.warning(self, "Cannot Delete", "Product is linked to existing invoices.")
-                    return
-                cursor.execute("DELETE FROM stock WHERE product_id = ?", (pid,))
-                cursor.execute("DELETE FROM products WHERE id = ?", (pid,))
+                cursor.execute("UPDATE products SET is_active = 0 WHERE id = ?", (pid,))
                 conn.commit()
-                QMessageBox.information(self, "Deleted", "Product removed.")
+                QMessageBox.information(self, "Deleted", "Product has been archived and removed from active lists.")
                 self.clear_form()
             else:
                 QMessageBox.warning(self, "Not Found", "No product found with this QR code.")

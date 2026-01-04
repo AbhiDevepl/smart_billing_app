@@ -153,11 +153,11 @@ class Dashboard(QWidget):
         today_invoices_count = cursor.fetchone()[0] or 0
         self.card_sales.sub_lbl.setText(f"Based on {today_invoices_count} invoices today")
         
-        cursor.execute("SELECT COUNT(*) FROM stock WHERE quantity_available < 10")
+        cursor.execute("SELECT COUNT(*) FROM stock JOIN products ON stock.product_id = products.id WHERE products.is_active = 1 AND stock.quantity_available < 10")
         low_stock = cursor.fetchone()[0]
         self.card_stock.val_lbl.setText(str(low_stock))
         
-        cursor.execute("SELECT COUNT(*) FROM products")
+        cursor.execute("SELECT COUNT(*) FROM products WHERE is_active = 1")
         total_prod = cursor.fetchone()[0]
         self.card_products.val_lbl.setText(str(total_prod))
 

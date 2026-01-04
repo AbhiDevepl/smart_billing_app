@@ -251,7 +251,7 @@ class BillingScreen(QWidget):
     def load_product_list(self):
         conn = db.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, brand_name, model_name, current_price, quantity_available FROM products JOIN stock ON products.id = stock.product_id")
+        cursor.execute("SELECT id, brand_name, model_name, current_price, quantity_available FROM products JOIN stock ON products.id = stock.product_id WHERE products.is_active = 1")
         self.products = cursor.fetchall()
         self.prod_map = {}
         self.combo_product.clear()

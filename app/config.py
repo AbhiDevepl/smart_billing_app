@@ -12,7 +12,7 @@ class Config:
     WINDOW_SIZE = "1200x800"
     
     # Theme Configuration
-    THEME = "light"  # "light" or "dark"
+    THEME = "dark"  # "light" or "dark"
     
     PALETTES = {
         "light": {

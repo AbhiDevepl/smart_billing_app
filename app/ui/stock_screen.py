@@ -130,6 +130,7 @@ class StockScreen(QWidget):
             SELECT p.id, p.brand_name || ' ' || p.model_name, p.category, p.qr_code, s.quantity_available 
             FROM products p
             JOIN stock s ON p.id = s.product_id
+            WHERE p.is_active = 1
             ORDER BY s.quantity_available ASC
         """)
         rows = cursor.fetchall()
@@ -157,7 +158,7 @@ class StockScreen(QWidget):
             SELECT p.id, p.brand_name || ' ' || p.model_name, p.category, p.qr_code, s.quantity_available 
             FROM products p
             JOIN stock s ON p.id = s.product_id
-            WHERE p.qr_code LIKE ? OR p.brand_name LIKE ? OR p.model_name LIKE ?
+            WHERE p.is_active = 1 AND (p.qr_code LIKE ? OR p.brand_name LIKE ? OR p.model_name LIKE ?)
             ORDER BY s.quantity_available ASC
         """, (f"%{query}%", f"%{query}%", f"%{query}%"))
         rows = cursor.fetchall()
@@ -200,20 +201,12 @@ class StockScreen(QWidget):
         conn = db.get_connection()
         cursor = conn.cursor()
         try:
-            # Business Rule: Check if linked to invoices
-            cursor.execute("SELECT COUNT(*) FROM invoice_items WHERE product_id = ?", (pid,))
-            if cursor.fetchone()[0] > 0:
-                QMessageBox.critical(self, "Safe-Delete Blocked", 
-                                     "This product cannot be deleted because it is linked to existing invoices. \n\nYou should update its stock to 0 instead of deleting it to preserve history.")
-                return
-            
-            # Start transaction
-            cursor.execute("DELETE FROM stock WHERE product_id = ?", (pid,))
-            cursor.execute("DELETE FROM products WHERE id = ?", (pid,))
+            # Archiving instead of hard deleting for safety and history
+            cursor.execute("UPDATE products SET is_active = 0 WHERE id = ?", (pid,))
             conn.commit()
             
-            QMessageBox.information(self, "Deleted", f"Product '{pname}' has been successfully removed.")
+            QMessageBox.information(self, "Deleted", f"Product '{pname}' has been successfully archived and removed from active views.")
             self.load_data()
         except Exception as e:
             conn.rollback()
-            QMessageBox.critical(self, "Error", f"Failed to delete product: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to archive product: {str(e)}")
