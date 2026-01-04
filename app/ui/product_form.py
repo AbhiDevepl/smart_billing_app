@@ -1,9 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QLineEdit, QComboBox, QPushButton, QGroupBox, 
-                               QTableWidget, QTableWidgetItem, QHeaderView, 
-                               QMessageBox, QFormLayout, QGridLayout)
+                               QLineEdit, QComboBox, QPushButton, QFrame, 
+                               QScrollArea, QGridLayout, QMessageBox)
 from PySide6.QtCore import Qt
-import logging
 from app.database import db
 
 class ProductForm(QWidget):
@@ -11,57 +9,64 @@ class ProductForm(QWidget):
         super().__init__()
         self.controller = controller
         self.setup_ui()
-        self.load_products()
 
     def setup_ui(self):
         self.main_layout = QVBoxLayout(self)
-        
-        # Title
-        lbl_title = QLabel("Product Management")
-        lbl_title.setStyleSheet("font-size: 24px; font-weight: bold;")
-        self.main_layout.addWidget(lbl_title)
+        self.main_layout.setContentsMargins(30, 30, 30, 30)
+        self.main_layout.setSpacing(30)
 
-        # Form Group
-        form_group = QGroupBox("Add / Edit Product")
-        form_layout = QGridLayout(form_group)
-        
-        form_layout.addWidget(QLabel("QR Code:"), 0, 0)
+        # Header
+        header = QLabel("Product Management")
+        header.setObjectName("SectionHeader")
+        self.main_layout.addWidget(header)
+
+        # Scroll Area for long forms
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background-color: transparent;")
+        self.main_layout.addWidget(scroll)
+
+        content = QWidget()
+        content.setStyleSheet("background-color: transparent;")
+        self.content_layout = QVBoxLayout(content)
+        self.content_layout.setSpacing(30)
+        scroll.setWidget(content)
+
+        # --- Section 1: Identification ---
         self.entry_qr = QLineEdit()
-        form_layout.addWidget(self.entry_qr, 0, 1)
+        self.entry_qr.setPlaceholderText("Scan or enter QR Code")
+        self.entry_category = QComboBox()
+        self.entry_category.addItems(["Battery", "Inverter", "Solar Panel", "Cable", "Other"])
         
-        form_layout.addWidget(QLabel("Category:"), 0, 2)
-        self.combo_category = QComboBox()
-        self.combo_category.addItems(["Battery", "Inverter"])
-        form_layout.addWidget(self.combo_category, 0, 3)
-        
-        form_layout.addWidget(QLabel("Brand:"), 1, 0)
-        self.entry_brand = QLineEdit()
-        form_layout.addWidget(self.entry_brand, 1, 1)
-        
-        form_layout.addWidget(QLabel("Model:"), 1, 2)
-        self.entry_model = QLineEdit()
-        form_layout.addWidget(self.entry_model, 1, 3)
-        
-        form_layout.addWidget(QLabel("Warranty (Mo):"), 2, 0)
-        self.entry_warranty = QLineEdit()
-        form_layout.addWidget(self.entry_warranty, 2, 1)
-        
-        form_layout.addWidget(QLabel("Selling Price:"), 2, 2)
-        self.entry_price = QLineEdit()
-        form_layout.addWidget(self.entry_price, 2, 3)
-        
-        form_layout.addWidget(QLabel("Opening Stock:"), 3, 0)
-        self.entry_stock = QLineEdit("0")
-        form_layout.addWidget(self.entry_stock, 3, 1)
+        self.content_layout.addWidget(self.create_card_section(
+            "Product Identity", 
+            "Enter the tracking and classification details for this item.",
+            [
+                ("QR Code*", self.entry_qr),
+                ("Category*", self.entry_category)
+            ]
+        ))
 
-        # Buttons Row
-        btn_layout = QHBoxLayout()
-        self.btn_save = QPushButton("Save Product")
-        self.btn_save.clicked.connect(self.save_product)
-        btn_layout.addWidget(self.btn_save)
+        # --- Section 2: Model Details ---
+        self.entry_brand = QLineEdit()
+        self.entry_model = QLineEdit()
+        self.entry_warranty = QLineEdit()
+        self.entry_warranty.setPlaceholderText("Months")
         
-        self.btn_delete = QPushButton("Delete Product")
-        self.btn_delete.setObjectName("danger")
+        self.content_layout.addWidget(self.create_card_section(
+            "Model Specification", 
+            "Specify the manufacturer, model name, and warranty period.",
+            [
+                ("Brand Name*", self.entry_brand),
+                ("Model Name*", self.entry_model),
+                ("Warranty (Months)", self.entry_warranty)
+            ]
+        ))
+
+        # --- Section 3: Pricing & Stock ---
+        self.entry_price = QLineEdit()
+        self.entry_stock = QLineEdit("0")
         
         self.content_layout.addWidget(self.create_card_section(
             "Inventory & Pricing", 
@@ -80,7 +85,7 @@ class ProductForm(QWidget):
         card_layout.setContentsMargins(30, 30, 30, 30)
         card_layout.setSpacing(50)
 
-        # Left Column
+        # Left Column: Info
         left_col = QVBoxLayout()
         h = QLabel(title)
         h.setObjectName("SubHeader")
@@ -93,7 +98,7 @@ class ProductForm(QWidget):
         left_col.addStretch()
         card_layout.addLayout(left_col, 1)
 
-        # Right Column
+        # Right Column: Fields
         right_col = QVBoxLayout()
         grid = QGridLayout()
         grid.setSpacing(15)
@@ -113,10 +118,10 @@ class ProductForm(QWidget):
         l = QHBoxLayout(w)
         l.setContentsMargins(0, 20, 0, 0)
         
-        btn_delete = QPushButton("Delete Product")
-        btn_delete.setObjectName("Danger")
-        btn_delete.clicked.connect(self.delete_product)
-        l.addWidget(btn_delete)
+        self.btn_delete = QPushButton("Delete Product")
+        self.btn_delete.setObjectName("Danger")
+        self.btn_delete.clicked.connect(self.delete_product)
+        l.addWidget(self.btn_delete)
         
         l.addStretch()
         
@@ -125,9 +130,9 @@ class ProductForm(QWidget):
         btn_clear.clicked.connect(self.clear_form)
         l.addWidget(btn_clear)
         
-        btn_save = QPushButton("Save Product")
-        btn_save.clicked.connect(self.save_product)
-        l.addWidget(btn_save)
+        self.btn_save = QPushButton("Save Product")
+        self.btn_save.clicked.connect(self.save_product)
+        l.addWidget(self.btn_save)
         return w
 
     def save_product(self):
@@ -173,7 +178,9 @@ class ProductForm(QWidget):
 
     def delete_product(self):
         qr = self.entry_qr.text().strip()
-        if not qr: return
+        if not qr: 
+            QMessageBox.warning(self, "Input Error", "Please enter a QR code to delete.")
+            return
         
         reply = QMessageBox.question(self, "Confirm", "Really delete this product and its stock?", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.No: return
@@ -185,7 +192,7 @@ class ProductForm(QWidget):
             row = cursor.fetchone()
             if row:
                 pid = row[0]
-                # Check if linked to invoices
+                # Check link to invoices
                 cursor.execute("SELECT COUNT(*) FROM invoice_items WHERE product_id = ?", (pid,))
                 if cursor.fetchone()[0] > 0:
                     QMessageBox.warning(self, "Cannot Delete", "Product is linked to existing invoices.")
@@ -195,12 +202,17 @@ class ProductForm(QWidget):
                 conn.commit()
                 QMessageBox.information(self, "Deleted", "Product removed.")
                 self.clear_form()
-            for c, val in enumerate(row):
-                self.table.setItem(r, c, QTableWidgetItem(str(val)))
+            else:
+                QMessageBox.warning(self, "Not Found", "No product found with this QR code.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
 
     def clear_form(self):
-        for entry in [self.entry_qr, self.entry_brand, self.entry_model, self.entry_warranty, self.entry_price]:
-            entry.clear()
+        for w in [self.entry_qr, self.entry_brand, self.entry_model, self.entry_warranty, self.entry_price]:
+            w.clear()
         self.entry_stock.setText("0")
-        self.table.clearSelection()
-        self.btn_delete.setEnabled(False)
+        self.entry_category.setCurrentIndex(0)
+
+    def load_data(self):
+        # Optional: refresh logic if needed
+        pass

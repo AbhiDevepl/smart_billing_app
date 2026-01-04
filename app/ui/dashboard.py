@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QPushButton, QGroupBox, QTableWidget, QTableWidgetItem, 
+                               QPushButton, QTableWidget, QTableWidgetItem, 
                                QHeaderView, QFrame, QGridLayout, QScrollArea)
 from PySide6.QtCore import Qt
 from app.database import db
@@ -47,7 +47,7 @@ class Dashboard(QWidget):
         self.main_layout.setContentsMargins(30, 30, 30, 30)
         self.main_layout.setSpacing(30)
 
-        # Scroll Area for responsive dashboard
+        # Scroll Area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
@@ -76,7 +76,7 @@ class Dashboard(QWidget):
 
         self.content_layout.addLayout(stats_layout)
 
-        # 2. Main Content (Recent Invoices & Quick Actions)
+        # 2. Main Content
         tables_layout = QHBoxLayout()
         tables_layout.setSpacing(20)
 
@@ -102,7 +102,7 @@ class Dashboard(QWidget):
         self.table_invoices.setMinimumHeight(400)
         inv_v_layout.addWidget(self.table_invoices)
 
-        # Quick Actions Sidebar within Dashboard
+        # Quick Actions
         actions_card = QFrame()
         actions_card.setObjectName("Card")
         actions_card.setFixedWidth(320)
