@@ -9,7 +9,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(Config.APP_TITLE)
-        self.resize(1280, 800)
+        self.showFullScreen()
         self.current_theme = Config.THEME
         self.screens = {}
         self.nav_buttons = {}
