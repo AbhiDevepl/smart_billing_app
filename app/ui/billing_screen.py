@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QTableWidgetItem, QHeaderView, QMessageBox, 
                                QRadioButton, QButtonGroup, QGridLayout, QScrollArea, QFrame)
 from PySide6.QtCore import Qt, QRegularExpression
-from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
 import os
 import logging
 from app.database import db
@@ -99,6 +99,7 @@ class BillingScreen(QWidget):
         self.entry_mobile.setMaxLength(10)
         self.entry_mobile.setValidator(QRegularExpressionValidator(QRegularExpression(r"\d+")))
         self.entry_name = QLineEdit()
+        self.entry_name.setValidator(QRegularExpressionValidator(QRegularExpression(r"^[a-zA-Z\s]*$")))
         self.entry_address = QLineEdit()
         
         self.content_layout.addWidget(self.create_card_section(
@@ -117,7 +118,9 @@ class BillingScreen(QWidget):
         self.combo_product = QComboBox()
         self.combo_product.setEditable(True)
         self.entry_price = QLineEdit()
+        self.entry_price.setValidator(QIntValidator(0, 999999))
         self.entry_qty = QLineEdit("1")
+        self.entry_qty.setValidator(QIntValidator(1, 999))
         
         self.content_layout.addWidget(self.create_card_section(
             "Product Choice", 
@@ -146,6 +149,7 @@ class BillingScreen(QWidget):
 
         # --- Section 4: Exchange & Finalization ---
         self.entry_ex_val = QLineEdit("0")
+        self.entry_ex_val.setValidator(QIntValidator(0, 999999))
         self.entry_ex_desc = QLineEdit()
         
         self.content_layout.addWidget(self.create_card_section(

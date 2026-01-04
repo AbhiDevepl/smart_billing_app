@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                                QLineEdit, QComboBox, QPushButton, QFrame, 
                                QScrollArea, QGridLayout, QMessageBox)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QRegularExpression
+from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
 from app.database import db
 
 class ProductForm(QWidget):
@@ -50,8 +51,10 @@ class ProductForm(QWidget):
 
         # --- Section 2: Model Details ---
         self.entry_brand = QLineEdit()
+        self.entry_brand.setValidator(QRegularExpressionValidator(QRegularExpression(r"^[a-zA-Z\s]*$")))
         self.entry_model = QLineEdit()
         self.entry_warranty = QLineEdit()
+        self.entry_warranty.setValidator(QIntValidator(0, 999))
         self.entry_warranty.setPlaceholderText("Months")
         
         self.content_layout.addWidget(self.create_card_section(
@@ -66,7 +69,9 @@ class ProductForm(QWidget):
 
         # --- Section 3: Pricing & Stock ---
         self.entry_price = QLineEdit()
+        self.entry_price.setValidator(QIntValidator(0, 999999))
         self.entry_stock = QLineEdit("0")
+        self.entry_stock.setValidator(QIntValidator(0, 9999))
         
         self.content_layout.addWidget(self.create_card_section(
             "Inventory & Pricing", 

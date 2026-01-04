@@ -51,6 +51,8 @@ class StockScreen(QWidget):
         self.table_stock = QTableWidget(0, 5)
         self.table_stock.setHorizontalHeaderLabels(["ID", "PRODUCT", "CATEGORY", "QR CODE", "AVAILABLE"])
         self.table_stock.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_stock.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table_stock.setSelectionMode(QTableWidget.SingleSelection)
         self.table_stock.setMinimumHeight(500)
         
         self.content_layout.addWidget(self.create_card_section(
@@ -114,6 +116,11 @@ class StockScreen(QWidget):
         btn_refresh.setObjectName("Secondary")
         btn_refresh.clicked.connect(self.load_data)
         l.addWidget(btn_refresh)
+
+        btn_delete = QPushButton("🗑️ Delete Selected")
+        btn_delete.setObjectName("Danger")
+        btn_delete.clicked.connect(self.delete_selected)
+        l.addWidget(btn_delete)
         return w
 
     def load_data(self):
@@ -167,3 +174,46 @@ class StockScreen(QWidget):
             return
 
         self.render_table(rows)
+
+    def delete_selected(self):
+        row = self.table_stock.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "Selection Required", "Please select a product from the table to delete.")
+            return
+            
+        pid_item = self.table_stock.item(row, 0)
+        pname_item = self.table_stock.item(row, 1)
+        
+        if not pid_item or not pname_item:
+            return
+            
+        pid = pid_item.text()
+        pname = pname_item.text()
+        
+        reply = QMessageBox.question(self, "Confirm Deletion", 
+                                      f"Are you sure you want to delete '{pname}' (ID: {pid})? \n\nThis will remove all stock records for this product.",
+                                      QMessageBox.Yes | QMessageBox.No)
+        
+        if reply == QMessageBox.No:
+            return
+            
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        try:
+            # Business Rule: Check if linked to invoices
+            cursor.execute("SELECT COUNT(*) FROM invoice_items WHERE product_id = ?", (pid,))
+            if cursor.fetchone()[0] > 0:
+                QMessageBox.critical(self, "Safe-Delete Blocked", 
+                                     "This product cannot be deleted because it is linked to existing invoices. \n\nYou should update its stock to 0 instead of deleting it to preserve history.")
+                return
+            
+            # Start transaction
+            cursor.execute("DELETE FROM stock WHERE product_id = ?", (pid,))
+            cursor.execute("DELETE FROM products WHERE id = ?", (pid,))
+            conn.commit()
+            
+            QMessageBox.information(self, "Deleted", f"Product '{pname}' has been successfully removed.")
+            self.load_data()
+        except Exception as e:
+            conn.rollback()
+            QMessageBox.critical(self, "Error", f"Failed to delete product: {str(e)}")

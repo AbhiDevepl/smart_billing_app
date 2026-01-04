@@ -1,7 +1,9 @@
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QPushButton, QStackedWidget, QStatusBar, QFrame, QLabel)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QPixmap
 from app.config import Config
+import os
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -28,9 +30,23 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(0, 20, 0, 20)
         sidebar_layout.setSpacing(5)
 
-        brand = QLabel("🔋 SmartBill")
-        brand.setStyleSheet("font-size: 20px; font-weight: 800; color: #007BFF; margin: 10px 25px 30px 25px;")
-        sidebar_layout.addWidget(brand)
+        # Logo / Brand
+        logo_container = QWidget()
+        logo_layout = QVBoxLayout(logo_container)
+        logo_layout.setContentsMargins(25, 10, 25, 30)
+        
+        logo_lbl = QLabel()
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets", "logo.png")
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            logo_lbl.setPixmap(pixmap.scaled(140, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        else:
+            logo_lbl.setText("🔋 SmartBill")
+            logo_lbl.setStyleSheet("font-size: 20px; font-weight: 800; color: #007BFF;")
+        
+        logo_lbl.setAlignment(Qt.AlignCenter)
+        logo_layout.addWidget(logo_lbl)
+        sidebar_layout.addWidget(logo_container)
 
         self.create_nav_button("Dashboard", "🏠", self.show_dashboard)
         self.create_nav_button("New Bill", "🛒", self.show_billing)
@@ -59,7 +75,15 @@ class MainWindow(QMainWindow):
         self.lbl_page_title = QLabel("Dashboard")
         self.lbl_page_title.setStyleSheet("font-size: 18px; font-weight: 600;")
         top_bar_layout.addWidget(self.lbl_page_title)
+        
         top_bar_layout.addStretch()
+
+        self.btn_refresh = QPushButton(" 🔄 Refresh ")
+        self.btn_refresh.setObjectName("Secondary")
+        self.btn_refresh.setFixedWidth(120)
+        self.btn_refresh.clicked.connect(self.refresh_current_screen)
+        top_bar_layout.addWidget(self.btn_refresh)
+        
         right_layout.addWidget(self.top_bar)
 
         self.stack = QStackedWidget()
