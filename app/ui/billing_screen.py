@@ -231,7 +231,7 @@ class BillingScreen(QWidget):
         
         btn_cancel = QPushButton("Cancel")
         btn_cancel.setObjectName("Secondary")
-        btn_cancel.clicked.connect(lambda: self.controller.go_home() if self.controller else None)
+        btn_cancel.clicked.connect(lambda: self.controller.show_dashboard() if self.controller else None)
         btn_row.addWidget(btn_cancel)
         
         btn_gen = QPushButton("Generate & Share")
